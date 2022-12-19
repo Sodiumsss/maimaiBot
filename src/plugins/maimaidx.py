@@ -1,13 +1,13 @@
+import re
+
 from nonebot import on_command, on_regex
-from nonebot.params import CommandArg, EventMessage
 from nonebot.adapters import Event
 from nonebot.adapters.onebot.v11 import Message, MessageSegment
+from nonebot.params import CommandArg, EventMessage
 
-from src.libraries.tool import hash
-from src.libraries.maimaidx_music import *
 from src.libraries.image import *
 from src.libraries.maimai_best_40 import generate, generate_simple
-import re
+from src.libraries.maimaidx_music import *
 
 
 def song_txt(music: Music):
@@ -58,47 +58,7 @@ async def _(message: Message = CommandArg()):
         s += f"{elem[0]}. {elem[1]} {elem[3]} {elem[4]}({elem[2]})\n"
     await inner_level.finish(s.strip())
 
-
-spec_rand = on_regex(r"^随个(?:dx|sd|标准)?[绿黄红紫白]?[0-9]+\+?")
-
-
-@spec_rand.handle()
-async def _(message: Message = EventMessage()):
-    level_labels = ['绿', '黄', '红', '紫', '白']
-    regex = "随个((?:dx|sd|标准))?([绿黄红紫白]?)([0-9]+\+?)"
-    res = re.match(regex, str(message).lower())
-    try:
-        if res.groups()[0] == "dx":
-            tp = ["DX"]
-        elif res.groups()[0] == "sd" or res.groups()[0] == "标准":
-            tp = ["SD"]
-        else:
-            tp = ["SD", "DX"]
-        level = res.groups()[2]
-        if res.groups()[1] == "":
-            music_data = total_list.filter(level=level, type=tp)
-        else:
-            music_data = total_list.filter(level=level, diff=['绿黄红紫白'.index(res.groups()[1])], type=tp)
-        if len(music_data) == 0:
-            rand_result = "没有这样的乐曲哦。"
-        else:
-            rand_result = song_txt(music_data.random())
-        await spec_rand.send(rand_result)
-    except Exception as e:
-        print(e)
-        await spec_rand.finish("随机命令错误，请检查语法")
-
-
-mr = on_regex(r".*maimai.*什么")
-
-
-@mr.handle()
-async def _():
-    await mr.finish(song_txt(total_list.random()))
-
-
 search_music = on_regex(r"^查歌.+")
-
 
 @search_music.handle()
 async def _(event: Event, message: Message = EventMessage()):
@@ -108,7 +68,7 @@ async def _(event: Event, message: Message = EventMessage()):
         return
     res = total_list.filter(title_search=name)
     if len(res) == 0:
-        await search_music.send("没有找到这样的乐曲。")
+        await search_music.send("木得。")
     elif len(res) < 50:
         search_result = ""
         for music in sorted(res, key=lambda i: int(i['id'])):
@@ -186,32 +146,6 @@ BREAK: {chart['notes'][4]}
         except Exception:
             await query_chart.send("未找到该乐曲")
 
-
-wm_list = ['拼机', '推分', '越级', '下埋', '夜勤', '练底力', '练手法', '打旧框', '干饭', '抓绝赞', '收歌']
-
-jrwm = on_command('今日舞萌', aliases={'今日mai'})
-
-
-@jrwm.handle()
-async def _(event: Event, message: Message = CommandArg()):
-    qq = int(event.get_user_id())
-    h = hash(qq)
-    rp = h % 100
-    wm_value = []
-    for i in range(11):
-        wm_value.append(h & 3)
-        h >>= 2
-    s = f"今日人品值：{rp}\n"
-    for i in range(11):
-        if wm_value[i] == 3:
-            s += f'宜 {wm_list[i]}\n'
-        elif wm_value[i] == 0:
-            s += f'忌 {wm_list[i]}\n'
-    s += "千雪提醒您：打机时不要大力拍打或滑动哦\n今日推荐歌曲："
-    music = total_list[h % len(total_list)]
-    await jrwm.finish(Message([MessageSegment("text", {"text": s})] + song_txt(music)))
-
-
 query_score = on_command('分数线')
 
 
@@ -265,7 +199,6 @@ BREAK 50落(一共{brk}个)等价于 {(break_50_reduce / 100):.3f} 个 TAP GREAT
 
 
 best_40_pic = on_command('b40')
-
 
 @best_40_pic.handle()
 async def _(event: Event, message: Message = CommandArg()):

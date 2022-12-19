@@ -1,11 +1,10 @@
-# Author: xyb, Diving_Fish
-import asyncio
-import os
 import math
+import os
 from typing import Optional, Dict, List
 
 import aiohttp
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
+
 from src.libraries.maimaidx_music import get_cover_len4_id, total_list
 
 scoreRank = 'D C B BB BBB A AA AAA S S+ SS SS+ SSS SSS+'.split(' ')
@@ -68,7 +67,7 @@ class BestList(object):
         self.data.append(elem)
         self.data.sort()
         self.data.reverse()
-        while (len(self.data) > self.size):
+        while len(self.data) > self.size:
             del self.data[-1]
 
     def pop(self):
@@ -84,12 +83,62 @@ class BestList(object):
         return self.data[index]
 
 
+def _Q2B(uchar):
+    """单个字符 全角转半角"""
+    inside_code = ord(uchar)
+    if inside_code == 0x3000:
+        inside_code = 0x0020
+    else:
+        inside_code -= 0xfee0
+    if inside_code < 0x0020 or inside_code > 0x7e:  # 转完之后不是半角字符返回原来的字符
+        return uchar
+    return chr(inside_code)
+
+def _stringQ2B(ustring):
+    """把字符串全角转半角"""
+    return "".join([_Q2B(uchar) for uchar in ustring])
+
+def _getCharWidth(o) -> int:
+    widths = [
+        (126, 1), (159, 0), (687, 1), (710, 0), (711, 1), (727, 0), (733, 1), (879, 0), (1154, 1), (1161, 0),
+        (4347, 1), (4447, 2), (7467, 1), (7521, 0), (8369, 1), (8426, 0), (9000, 1), (9002, 2), (11021, 1),
+        (12350, 2), (12351, 1), (12438, 2), (12442, 0), (19893, 2), (19967, 1), (55203, 2), (63743, 1),
+        (64106, 2), (65039, 1), (65059, 0), (65131, 2), (65279, 1), (65376, 2), (65500, 1), (65510, 2),
+        (120831, 1), (262141, 2), (1114109, 1),
+    ]
+    if o == 0xe or o == 0xf:
+        return 0
+    for num, wid in widths:
+        if o <= num:
+            return wid
+    return 1
+
+def _columnWidth(s: str):
+    res = 0
+    for ch in s:
+        res += _getCharWidth(ord(ch))
+    return res
+
+def _changeColumnWidth(s: str, myLen: int) -> str:
+    res = 0
+    sList = []
+    for ch in s:
+        res += _getCharWidth(ord(ch))
+        if res <= myLen:
+            sList.append(ch)
+    return ''.join(sList)
+
+
+def _resizePic(img: Image.Image, time: float):
+    return img.resize((int(img.size[0] * time), int(img.size[1] * time)))
+
+
 class DrawBest(object):
 
     def __init__(self, sdBest: BestList, dxBest: BestList, userName: str, playerRating: int, musicRating: int):
         self.sdBest = sdBest
         self.dxBest = dxBest
-        self.userName = self._stringQ2B(userName)
+        self.userName = _stringQ2B(userName)
         self.playerRating = playerRating
         self.musicRating = musicRating
         self.rankRating = self.playerRating - self.musicRating
@@ -105,54 +154,6 @@ class DrawBest(object):
         for i in range(4):
             self.COLOUMS_IMG.append(888 + 172 * i)
         self.draw()
-
-    def _Q2B(self, uchar):
-        """单个字符 全角转半角"""
-        inside_code = ord(uchar)
-        if inside_code == 0x3000:
-            inside_code = 0x0020
-        else:
-            inside_code -= 0xfee0
-        if inside_code < 0x0020 or inside_code > 0x7e:  # 转完之后不是半角字符返回原来的字符
-            return uchar
-        return chr(inside_code)
-
-    def _stringQ2B(self, ustring):
-        """把字符串全角转半角"""
-        return "".join([self._Q2B(uchar) for uchar in ustring])
-
-    def _getCharWidth(self, o) -> int:
-        widths = [
-            (126, 1), (159, 0), (687, 1), (710, 0), (711, 1), (727, 0), (733, 1), (879, 0), (1154, 1), (1161, 0),
-            (4347, 1), (4447, 2), (7467, 1), (7521, 0), (8369, 1), (8426, 0), (9000, 1), (9002, 2), (11021, 1),
-            (12350, 2), (12351, 1), (12438, 2), (12442, 0), (19893, 2), (19967, 1), (55203, 2), (63743, 1),
-            (64106, 2), (65039, 1), (65059, 0), (65131, 2), (65279, 1), (65376, 2), (65500, 1), (65510, 2),
-            (120831, 1), (262141, 2), (1114109, 1),
-        ]
-        if o == 0xe or o == 0xf:
-            return 0
-        for num, wid in widths:
-            if o <= num:
-                return wid
-        return 1
-
-    def _coloumWidth(self, s: str):
-        res = 0
-        for ch in s:
-            res += self._getCharWidth(ord(ch))
-        return res
-
-    def _changeColumnWidth(self, s: str, len: int) -> str:
-        res = 0
-        sList = []
-        for ch in s:
-            res += self._getCharWidth(ord(ch))
-            if res <= len:
-                sList.append(ch)
-        return ''.join(sList)
-
-    def _resizePic(self, img: Image.Image, time: float):
-        return img.resize((int(img.size[0] * time), int(img.size[1] * time)))
 
     def _findRaPic(self) -> str:
         num = '10'
@@ -184,7 +185,7 @@ class DrawBest(object):
             digit = theRa % 10
             theRa = theRa // 10
             digitImg = Image.open(self.pic_dir + f'UI_NUM_Drating_{digit}.png').convert('RGBA')
-            digitImg = self._resizePic(digitImg, 0.6)
+            digitImg = _resizePic(digitImg, 0.6)
             ratingBaseImg.paste(digitImg, (COLOUMS_RATING[i] - 2, 9), mask=digitImg.split()[3])
             i = i - 1
         return ratingBaseImg
@@ -196,7 +197,7 @@ class DrawBest(object):
         levelTriagle = [(itemW, 0), (itemW - 27, 0), (itemW, 27)]
         rankPic = 'D C B BB BBB A AA AAA S Sp SS SSp SSS SSSp'.split(' ')
         comboPic = ' FC FCp AP APp'.split(' ')
-        imgDraw = ImageDraw.Draw(img)
+        ImageDraw.Draw(img)
         titleFontName = 'src/static/adobe_simhei.otf'
         for num in range(0, len(sdBest)):
             i = num // 5
@@ -206,7 +207,7 @@ class DrawBest(object):
             if not os.path.exists(pngPath):
                 pngPath = self.cover_dir + '1000.png'
             temp = Image.open(pngPath).convert('RGB')
-            temp = self._resizePic(temp, itemW / temp.size[0])
+            temp = _resizePic(temp, itemW / temp.size[0])
             temp = temp.crop((0, (temp.size[1] - itemH) / 2, itemW, (temp.size[1] + itemH) / 2))
             temp = temp.filter(ImageFilter.GaussianBlur(3))
             temp = temp.point(lambda p: int(p * 0.72))
@@ -215,19 +216,19 @@ class DrawBest(object):
             tempDraw.polygon(levelTriagle, Color[chartInfo.diff])
             font = ImageFont.truetype(titleFontName, 16, encoding='utf-8')
             title = chartInfo.title
-            if self._coloumWidth(title) > 15:
-                title = self._changeColumnWidth(title, 14) + '...'
+            if _columnWidth(title) > 15:
+                title = _changeColumnWidth(title, 14) + '...'
             tempDraw.text((8, 8), title, 'white', font)
             font = ImageFont.truetype(titleFontName, 14, encoding='utf-8')
 
             tempDraw.text((7, 28), f'{"%.4f" % chartInfo.achievement}%', 'white', font)
             rankImg = Image.open(self.pic_dir + f'UI_GAM_Rank_{rankPic[chartInfo.scoreId]}.png').convert('RGBA')
-            rankImg = self._resizePic(rankImg, 0.3)
+            rankImg = _resizePic(rankImg, 0.3)
             temp.paste(rankImg, (88, 28), rankImg.split()[3])
             if chartInfo.comboId:
                 comboImg = Image.open(self.pic_dir + f'UI_MSS_MBase_Icon_{comboPic[chartInfo.comboId]}_S.png').convert(
                     'RGBA')
-                comboImg = self._resizePic(comboImg, 0.45)
+                comboImg = _resizePic(comboImg, 0.45)
                 temp.paste(comboImg, (119, 27), comboImg.split()[3])
             font = ImageFont.truetype('src/static/adobe_simhei.otf', 12, encoding='utf-8')
             tempDraw.text((8, 44), f'Base: {chartInfo.ds} -> {chartInfo.ra}', 'white', font)
@@ -242,7 +243,7 @@ class DrawBest(object):
             i = num // 5
             j = num % 5
             temp = Image.open(self.cover_dir + f'1000.png').convert('RGB')
-            temp = self._resizePic(temp, itemW / temp.size[0])
+            temp = _resizePic(temp, itemW / temp.size[0])
             temp = temp.crop((0, (temp.size[1] - itemH) / 2, itemW, (temp.size[1] + itemH) / 2))
             temp = temp.filter(ImageFilter.GaussianBlur(1))
             img.paste(temp, (self.COLOUMS_IMG[j] + 4, self.ROWS_IMG[i + 1] + 4))
@@ -254,7 +255,7 @@ class DrawBest(object):
             if not os.path.exists(pngPath):
                 pngPath = self.cover_dir + '1000.png'
             temp = Image.open(pngPath).convert('RGB')
-            temp = self._resizePic(temp, itemW / temp.size[0])
+            temp = _resizePic(temp, itemW / temp.size[0])
             temp = temp.crop((0, (temp.size[1] - itemH) / 2, itemW, (temp.size[1] + itemH) / 2))
             temp = temp.filter(ImageFilter.GaussianBlur(3))
             temp = temp.point(lambda p: int(p * 0.72))
@@ -263,19 +264,19 @@ class DrawBest(object):
             tempDraw.polygon(levelTriagle, Color[chartInfo.diff])
             font = ImageFont.truetype(titleFontName, 16, encoding='utf-8')
             title = chartInfo.title
-            if self._coloumWidth(title) > 15:
-                title = self._changeColumnWidth(title, 14) + '...'
+            if _columnWidth(title) > 15:
+                title = _changeColumnWidth(title, 14) + '...'
             tempDraw.text((8, 8), title, 'white', font)
             font = ImageFont.truetype(titleFontName, 14, encoding='utf-8')
 
             tempDraw.text((7, 28), f'{"%.4f" % chartInfo.achievement}%', 'white', font)
             rankImg = Image.open(self.pic_dir + f'UI_GAM_Rank_{rankPic[chartInfo.scoreId]}.png').convert('RGBA')
-            rankImg = self._resizePic(rankImg, 0.3)
+            rankImg = _resizePic(rankImg, 0.3)
             temp.paste(rankImg, (88, 28), rankImg.split()[3])
             if chartInfo.comboId:
                 comboImg = Image.open(self.pic_dir + f'UI_MSS_MBase_Icon_{comboPic[chartInfo.comboId]}_S.png').convert(
                     'RGBA')
-                comboImg = self._resizePic(comboImg, 0.45)
+                comboImg = _resizePic(comboImg, 0.45)
                 temp.paste(comboImg, (119, 27), comboImg.split()[3])
             font = ImageFont.truetype('src/static/adobe_simhei.otf', 12, encoding='utf-8')
             tempDraw.text((8, 44), f'Base: {chartInfo.ds} -> {chartInfo.ra}', 'white', font)
@@ -290,19 +291,19 @@ class DrawBest(object):
             i = num // 3
             j = num % 3
             temp = Image.open(self.cover_dir + f'1000.png').convert('RGB')
-            temp = self._resizePic(temp, itemW / temp.size[0])
+            temp = _resizePic(temp, itemW / temp.size[0])
             temp = temp.crop((0, (temp.size[1] - itemH) / 2, itemW, (temp.size[1] + itemH) / 2))
             temp = temp.filter(ImageFilter.GaussianBlur(1))
             img.paste(temp, (self.COLOUMS_IMG[j + 6] + 4, self.ROWS_IMG[i + 1] + 4))
 
     def draw(self):
         splashLogo = Image.open(self.pic_dir + 'UI_CMN_TabTitle_MaimaiTitle_Ver214.png').convert('RGBA')
-        splashLogo = self._resizePic(splashLogo, 0.65)
+        splashLogo = _resizePic(splashLogo, 0.65)
         self.img.paste(splashLogo, (10, 10), mask=splashLogo.split()[3])
 
         ratingBaseImg = Image.open(self.pic_dir + self._findRaPic()).convert('RGBA')
         ratingBaseImg = self._drawRating(ratingBaseImg)
-        ratingBaseImg = self._resizePic(ratingBaseImg, 0.85)
+        ratingBaseImg = _resizePic(ratingBaseImg, 0.85)
         self.img.paste(ratingBaseImg, (240, 8), mask=ratingBaseImg.split()[3])
 
         namePlateImg = Image.open(self.pic_dir + 'UI_TST_PlateMask.png').convert('RGBA')
@@ -311,7 +312,7 @@ class DrawBest(object):
         font1 = ImageFont.truetype('src/static/msyh.ttc', 28, encoding='unic')
         namePlateDraw.text((12, 4), ' '.join(list(self.userName)), 'black', font1)
         nameDxImg = Image.open(self.pic_dir + 'UI_CMN_Name_DX.png').convert('RGBA')
-        nameDxImg = self._resizePic(nameDxImg, 0.9)
+        nameDxImg = _resizePic(nameDxImg, 0.9)
         namePlateImg.paste(nameDxImg, (230, 4), mask=nameDxImg.split()[3])
         self.img.paste(namePlateImg, (240, 40), mask=namePlateImg.split()[3])
 
@@ -331,13 +332,13 @@ class DrawBest(object):
         shougouDraw.text((textPos[0] - 1, textPos[1] + 1), playCountInfo, 'black', font2)
         shougouDraw.text((textPos[0] + 1, textPos[1] + 1), playCountInfo, 'black', font2)
         shougouDraw.text(textPos, playCountInfo, 'white', font2)
-        shougouImg = self._resizePic(shougouImg, 1.05)
+        shougouImg = _resizePic(shougouImg, 1.05)
         self.img.paste(shougouImg, (240, 83), mask=shougouImg.split()[3])
 
         self._drawBestList(self.img, self.sdBest, self.dxBest)
 
         authorBoardImg = Image.open(self.pic_dir + 'UI_CMN_MiniDialog_01.png').convert('RGBA')
-        authorBoardImg = self._resizePic(authorBoardImg, 0.35)
+        authorBoardImg = _resizePic(authorBoardImg, 0.35)
         authorBoardDraw = ImageDraw.Draw(authorBoardImg)
         authorBoardDraw.text((31, 28), '   Generated By\nXybBot & Chiyuki', 'black', font2)
         self.img.paste(authorBoardImg, (1224, 19), mask=authorBoardImg.split()[3])
@@ -355,7 +356,7 @@ class DrawBest(object):
 
 def computeRa(ds: float, achievement: float) -> int:
     baseRa = 15.0
-    if achievement >= 50 and achievement < 60:
+    if 50 <= achievement < 60:
         baseRa = 5.0
     elif achievement < 70:
         baseRa = 6.0
@@ -432,7 +433,8 @@ class DrawBestSimple(object):
                 myStr += "(" + diffs[i.diff] + i.ds.__str__() + ")" + "\t" + i.achievement.__str__() + \
                          "(" + i.ra.__str__() + ")"
             else:
-                myStr += "(" + diffs[i.diff] + i.ds.__str__() + ")" + "[" + combo[i.comboId] + "]\t" + i.achievement.__str__() + \
+                myStr += "(" + diffs[i.diff] + i.ds.__str__() + ")" + "[" + combo[i.comboId] + "]\t" \
+                         + i.achievement.__str__() + \
                          "(" + i.ra.__str__() + ")"
             oldScore += i.ra
             fillcolor = 'black'
@@ -459,7 +461,8 @@ class DrawBestSimple(object):
                 myStr += "(" + diffs[i.diff] + i.ds.__str__() + ")" + "\t" + i.achievement.__str__() + \
                          "(" + i.ra.__str__() + ")"
             else:
-                myStr += "(" + diffs[i.diff] + i.ds.__str__() + ")" + "[" + combo[i.comboId] + "]\t" + i.achievement.__str__() + \
+                myStr += "(" + diffs[i.diff] + i.ds.__str__() + ")" + "[" + combo[i.comboId] + "]\t" \
+                         + i.achievement.__str__() + \
                          "(" + i.ra.__str__() + ")"
             newScore += i.ra
             fillcolor = 'black'

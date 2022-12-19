@@ -5,11 +5,13 @@ from copy import deepcopy
 
 import requests
 
+
 def get_cover_len4_id(mid) -> str:
     mid = int(mid)
     if 10001 <= mid:
         mid -= 10000
     return f'{mid:04d}'
+
 
 def cross(checker: List[Any], elem: Optional[Union[Any, List[Any]]], diff):
     ret = False
@@ -58,8 +60,8 @@ class Chart(Dict):
     slide: Optional[int] = None
     hold: Optional[int] = None
     touch: Optional[int] = None
-    brk: Optional[int] = None
-    charter: Optional[int] = None
+    brk: Optional[int] = None  # break
+    charter: Optional[int] = None  # 铺师
 
     def __getattribute__(self, item):
         if item == 'tap':
