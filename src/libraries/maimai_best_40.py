@@ -148,11 +148,11 @@ class DrawBest(object):
         self.ROWS_IMG = [2]
         for i in range(6):
             self.ROWS_IMG.append(116 + 96 * i)
-        self.COLOUMS_IMG = []
+        self.COLUMNS_IMG = []
         for i in range(6):
-            self.COLOUMS_IMG.append(2 + 172 * i)
+            self.COLUMNS_IMG.append(2 + 172 * i)
         for i in range(4):
-            self.COLOUMS_IMG.append(888 + 172 * i)
+            self.COLUMNS_IMG.append(888 + 172 * i)
         self.draw()
 
     def _findRaPic(self) -> str:
@@ -178,7 +178,7 @@ class DrawBest(object):
         return f'UI_CMN_DXRating_S_{num}.png'
 
     def _drawRating(self, ratingBaseImg: Image.Image):
-        COLOUMS_RATING = [86, 100, 115, 130, 145]
+        COLUMNS_RATING = [86, 100, 115, 130, 145]
         theRa = self.playerRating
         i = 4
         while theRa:
@@ -186,7 +186,7 @@ class DrawBest(object):
             theRa = theRa // 10
             digitImg = Image.open(self.pic_dir + f'UI_NUM_Drating_{digit}.png').convert('RGBA')
             digitImg = _resizePic(digitImg, 0.6)
-            ratingBaseImg.paste(digitImg, (COLOUMS_RATING[i] - 2, 9), mask=digitImg.split()[3])
+            ratingBaseImg.paste(digitImg, (COLUMNS_RATING[i] - 2, 9), mask=digitImg.split()[3])
             i = i - 1
         return ratingBaseImg
 
@@ -237,8 +237,8 @@ class DrawBest(object):
 
             recBase = Image.new('RGBA', (itemW, itemH), 'black')
             recBase = recBase.point(lambda p: int(p * 0.8))
-            img.paste(recBase, (self.COLOUMS_IMG[j] + 5, self.ROWS_IMG[i + 1] + 5))
-            img.paste(temp, (self.COLOUMS_IMG[j] + 4, self.ROWS_IMG[i + 1] + 4))
+            img.paste(recBase, (self.COLUMNS_IMG[j] + 5, self.ROWS_IMG[i + 1] + 5))
+            img.paste(temp, (self.COLUMNS_IMG[j] + 4, self.ROWS_IMG[i + 1] + 4))
         for num in range(len(sdBest), sdBest.size):
             i = num // 5
             j = num % 5
@@ -246,7 +246,7 @@ class DrawBest(object):
             temp = _resizePic(temp, itemW / temp.size[0])
             temp = temp.crop((0, (temp.size[1] - itemH) / 2, itemW, (temp.size[1] + itemH) / 2))
             temp = temp.filter(ImageFilter.GaussianBlur(1))
-            img.paste(temp, (self.COLOUMS_IMG[j] + 4, self.ROWS_IMG[i + 1] + 4))
+            img.paste(temp, (self.COLUMNS_IMG[j] + 4, self.ROWS_IMG[i + 1] + 4))
         for num in range(0, len(dxBest)):
             i = num // 3
             j = num % 3
@@ -285,8 +285,8 @@ class DrawBest(object):
 
             recBase = Image.new('RGBA', (itemW, itemH), 'black')
             recBase = recBase.point(lambda p: int(p * 0.8))
-            img.paste(recBase, (self.COLOUMS_IMG[j + 6] + 5, self.ROWS_IMG[i + 1] + 5))
-            img.paste(temp, (self.COLOUMS_IMG[j + 6] + 4, self.ROWS_IMG[i + 1] + 4))
+            img.paste(recBase, (self.COLUMNS_IMG[j + 6] + 5, self.ROWS_IMG[i + 1] + 5))
+            img.paste(temp, (self.COLUMNS_IMG[j + 6] + 4, self.ROWS_IMG[i + 1] + 4))
         for num in range(len(dxBest), dxBest.size):
             i = num // 3
             j = num % 3
@@ -294,7 +294,7 @@ class DrawBest(object):
             temp = _resizePic(temp, itemW / temp.size[0])
             temp = temp.crop((0, (temp.size[1] - itemH) / 2, itemW, (temp.size[1] + itemH) / 2))
             temp = temp.filter(ImageFilter.GaussianBlur(1))
-            img.paste(temp, (self.COLOUMS_IMG[j + 6] + 4, self.ROWS_IMG[i + 1] + 4))
+            img.paste(temp, (self.COLUMNS_IMG[j + 6] + 4, self.ROWS_IMG[i + 1] + 4))
 
     def draw(self):
         splashLogo = Image.open(self.pic_dir + 'UI_CMN_TabTitle_MaimaiTitle_Ver214.png').convert('RGBA')
@@ -347,13 +347,8 @@ class DrawBest(object):
         self.img.paste(dxImg, (890, 65), mask=dxImg.split()[3])
         sdImg = Image.open(self.pic_dir + 'UI_RSL_MBase_Parts_02.png').convert('RGBA')
         self.img.paste(sdImg, (758, 65), mask=sdImg.split()[3])
-
-        # self.img.show()
-
     def getDir(self):
         return self.img
-
-
 def computeRa(ds: float, achievement: float) -> int:
     baseRa = 15.0
     if 50 <= achievement < 60:

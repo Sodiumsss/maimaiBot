@@ -1,7 +1,6 @@
-import json
 import random
-from typing import Dict, List, Optional, Union, Tuple, Any
 from copy import deepcopy
+from typing import Dict, List, Optional, Union, Tuple, Any
 
 import requests
 
@@ -127,7 +126,7 @@ class MusicList(List[Music]):
                title_search: Optional[str] = ...,
                genre: Optional[Union[str, List[str]]] = ...,
                bpm: Optional[Union[float, List[float], Tuple[float, float]]] = ...,
-               type: Optional[Union[str, List[str]]] = ...,
+               stype: Optional[Union[str, List[str]]] = ...,
                diff: List[int] = ...,
                ):
         new_list = MusicList()
@@ -142,7 +141,7 @@ class MusicList(List[Music]):
                 continue
             if not in_or_equal(music.genre, genre):
                 continue
-            if not in_or_equal(music.type, type):
+            if not in_or_equal(music.type, stype):
                 continue
             if not in_or_equal(music.bpm, bpm):
                 continue

@@ -31,7 +31,7 @@ def inner_level_q(ds1, ds2=None):
         music_data = total_list.filter(ds=(ds1, ds2))
     else:
         music_data = total_list.filter(ds=ds1)
-    for music in sorted(music_data, key=lambda i: int(i['id'])):
+    for music in sorted(music_data, key=lambda _: int(_['id'])):
         for i in music.diff:
             result_set.append((music['id'], music['title'], music['ds'][i], diff_label[i], music['level'][i]))
     return result_set
@@ -61,7 +61,7 @@ async def _(message: Message = CommandArg()):
 search_music = on_regex(r"^查歌.+")
 
 @search_music.handle()
-async def _(event: Event, message: Message = EventMessage()):
+async def _(message: Message = EventMessage()):
     regex = "查歌(.+)"
     name = re.match(regex, str(message)).groups()[0].strip()
     if name == "":
@@ -85,7 +85,7 @@ query_chart = on_regex(r"^([绿黄红紫白]?)id([0-9]+)")
 
 
 @query_chart.handle()
-async def _(event: Event, message: Message = EventMessage()):
+async def _(message: Message = EventMessage()):
     regex = "([绿黄红紫白]?)id([0-9]+)"
     groups = re.match(regex, str(message)).groups()
     level_labels = ['绿', '黄', '红', '紫', '白']
@@ -140,7 +140,9 @@ BREAK: {chart['notes'][4]}
                     "file": f"{file}"
                 }),
                 MessageSegment("text", {
-                    "text": f"艺术家: {music['basic_info']['artist']}\n分类: {music['basic_info']['genre']}\nBPM: {music['basic_info']['bpm']}\n版本: {music['basic_info']['from']}\n难度: {'/'.join(music['level'])}"
+                    "text": f"艺术家: {music['basic_info']['artist']}\n分类:"
+                            f" {music['basic_info']['genre']}\nBPM: {music['basic_info']['bpm']}\n版本:"
+                            f" {music['basic_info']['from']}\n难度: {'/'.join(music['level'])}"
                 })
             ]))
         except Exception:
@@ -150,7 +152,7 @@ query_score = on_command('分数线')
 
 
 @query_score.handle()
-async def _(event: Event, message: Message = CommandArg()):
+async def _(message: Message = CommandArg()):
     r = "([绿黄红紫白])(id)?([0-9]+)"
     argv = str(message).strip().split(" ")
     if len(argv) == 1 and argv[0] == '帮助':

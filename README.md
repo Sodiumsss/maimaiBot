@@ -1,12 +1,14 @@
 # mai bot 使用指南
 
-此 README 提供了最低程度的 mai bot 教程与支持。
+该项目在Python 3.11.1 (tags/v3.11.1:a7a450f, Dec  6 2022, 19:58:39)环境下开发。
 
 **建议您至少拥有一定的编程基础之后再尝试使用本工具。**
 
 ## Step 1. 安装 Python
 
-请自行前往 https://www.python.org/ 下载 Python 3 版本（> 3.7）并将其添加到环境变量（在安装过程中勾选 Add Python to system PATH）。对大多数用户来说，您应该下载 Windows installer (64-bit)。
+请自行前往 https://www.python.org/ 下载 Python 3 版本（> 3.7）并将其添加到环境变量（在安装过程中勾选 Add Python to system PATH）。
+
+对大多数用户来说，您应该下载 Windows installer (64-bit)。
 
 在 Linux 系统上，可能需要其他方法安装 Python 3，请自行查找。
 
@@ -81,7 +83,7 @@ servers:
 > 请查阅 https://github.com/nonebot/nonebot2 以及 https://github.com/Mrs4s/go-cqhttp 中的文档。
 
 部分消息发不出来？
-> 被风控了。解决方式：换号或者让这个号保持登陆状态和一定的聊天频率，持续一段时间。
+> 被风控了。解决方式：换号或者让这个号保持登陆状态和聊天频率，持续一段时间。
 
 ## 说明
 

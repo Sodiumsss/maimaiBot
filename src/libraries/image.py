@@ -5,7 +5,7 @@ from PIL import ImageFont, ImageDraw, Image
 
 
 path = 'src/static/high_eq_image.png'
-fontpath = "src/static/msyh.ttc"
+fontpath = "src/static/Harmony.ttf"
 
 
 def draw_text(img_pil, text, offset_x):
@@ -23,7 +23,7 @@ def draw_text(img_pil, text, offset_x):
 
 
 def text_to_image(text):
-    font = ImageFont.truetype(fontpath, 24)
+    font = ImageFont.truetype(fontpath, 25)
     padding = 10
     margin = 4
     text_list = text.split('\n')
