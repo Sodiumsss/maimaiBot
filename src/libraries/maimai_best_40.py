@@ -1,9 +1,13 @@
+import base64
+import io
 import math
 import os
 from typing import Optional, Dict, List
 
 import aiohttp
+import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from matplotlib import pyplot as plt
 
 from src.libraries.maimaidx_music import get_cover_len4_id, total_list
 
@@ -15,16 +19,16 @@ diffs = 'Basic Advanced Expert Master Re:Master'.split(' ')
 class ChartInfo(object):
     def __init__(self, idNum: str, diff: int, tp: str, achievement: float, ra: int, comboId: int, scoreId: int,
                  title: str, ds: float, lv: str):
-        self.idNum = idNum
-        self.diff = diff
-        self.tp = tp
-        self.achievement = achievement
-        self.ra = ra
-        self.comboId = comboId
-        self.scoreId = scoreId
-        self.title = title
-        self.ds = ds
-        self.lv = lv
+        self.idNum = idNum  # 歌曲id
+        self.diff = diff  # 歌曲难度
+        self.tp = tp  # DX,标准
+        self.achievement = achievement  # 100.231
+        self.ra = ra  # 所获得的分数
+        self.comboId = comboId  # fc、ap···
+        self.scoreId = scoreId  # sss，sss+
+        self.title = title  # 歌曲名字
+        self.ds = ds  # 13.5,12.9
+        self.lv = lv  # 12+,13
 
     def __str__(self):
         return '%-50s' % f'{self.title} [{self.tp}]' + f'{self.ds}\t{diffs[self.diff]}\t{self.ra}'
@@ -94,9 +98,11 @@ def _Q2B(uchar):
         return uchar
     return chr(inside_code)
 
+
 def _stringQ2B(ustring):
     """把字符串全角转半角"""
     return "".join([_Q2B(uchar) for uchar in ustring])
+
 
 def _getCharWidth(o) -> int:
     widths = [
@@ -113,11 +119,13 @@ def _getCharWidth(o) -> int:
             return wid
     return 1
 
+
 def _columnWidth(s: str):
     res = 0
     for ch in s:
         res += _getCharWidth(ord(ch))
     return res
+
 
 def _changeColumnWidth(s: str, myLen: int) -> str:
     res = 0
@@ -208,7 +216,7 @@ class DrawBest(object):
                 pngPath = self.cover_dir + '1000.png'
             temp = Image.open(pngPath).convert('RGB')
             temp = _resizePic(temp, itemW / temp.size[0])
-            temp = temp.crop((0, (temp.size[1] - itemH) / 2, itemW, (temp.size[1] + itemH) / 2))
+            temp = temp.crop((0, int((temp.size[1] - itemH) / 2), itemW, int((temp.size[1] + itemH) / 2)))
             temp = temp.filter(ImageFilter.GaussianBlur(3))
             temp = temp.point(lambda p: int(p * 0.72))
 
@@ -244,7 +252,7 @@ class DrawBest(object):
             j = num % 5
             temp = Image.open(self.cover_dir + f'1000.png').convert('RGB')
             temp = _resizePic(temp, itemW / temp.size[0])
-            temp = temp.crop((0, (temp.size[1] - itemH) / 2, itemW, (temp.size[1] + itemH) / 2))
+            temp = temp.crop((0, int((temp.size[1] - itemH) / 2), itemW, int((temp.size[1] + itemH) / 2)))
             temp = temp.filter(ImageFilter.GaussianBlur(1))
             img.paste(temp, (self.COLUMNS_IMG[j] + 4, self.ROWS_IMG[i + 1] + 4))
         for num in range(0, len(dxBest)):
@@ -256,7 +264,7 @@ class DrawBest(object):
                 pngPath = self.cover_dir + '1000.png'
             temp = Image.open(pngPath).convert('RGB')
             temp = _resizePic(temp, itemW / temp.size[0])
-            temp = temp.crop((0, (temp.size[1] - itemH) / 2, itemW, (temp.size[1] + itemH) / 2))
+            temp = temp.crop((0, int((temp.size[1] - itemH) / 2), itemW, int((temp.size[1] + itemH) / 2)))
             temp = temp.filter(ImageFilter.GaussianBlur(3))
             temp = temp.point(lambda p: int(p * 0.72))
 
@@ -292,7 +300,7 @@ class DrawBest(object):
             j = num % 3
             temp = Image.open(self.cover_dir + f'1000.png').convert('RGB')
             temp = _resizePic(temp, itemW / temp.size[0])
-            temp = temp.crop((0, (temp.size[1] - itemH) / 2, itemW, (temp.size[1] + itemH) / 2))
+            temp = temp.crop((0, int((temp.size[1] - itemH) / 2), itemW, int((temp.size[1] + itemH) / 2)))
             temp = temp.filter(ImageFilter.GaussianBlur(1))
             img.paste(temp, (self.COLUMNS_IMG[j + 6] + 4, self.ROWS_IMG[i + 1] + 4))
 
@@ -347,8 +355,11 @@ class DrawBest(object):
         self.img.paste(dxImg, (890, 65), mask=dxImg.split()[3])
         sdImg = Image.open(self.pic_dir + 'UI_RSL_MBase_Parts_02.png').convert('RGBA')
         self.img.paste(sdImg, (758, 65), mask=sdImg.split()[3])
+
     def getDir(self):
         return self.img
+
+
 def computeRa(ds: float, achievement: float) -> int:
     baseRa = 15.0
     if 50 <= achievement < 60:
@@ -437,7 +448,7 @@ class DrawBestSimple(object):
                 fillcolor = 'green'
             elif i.comboId == 2:
                 fillcolor = '#1D6F6D'
-            elif i.comboId >2:
+            elif i.comboId > 2:
                 fillcolor = 'red'
             draw.text((nowTextX, nowTextY), myStr, font=smallFont, fill=fillcolor)
             nowTextY += 21
@@ -486,7 +497,7 @@ async def generate_simple(payload: Dict) -> (Optional[Image.Image], bool):
         sd_best = BestList(25)
         dx_best = BestList(15)
         obj = await resp.json()
-        print(obj)
+
         dx: List[Dict] = obj["charts"]["dx"]
         sd: List[Dict] = obj["charts"]["sd"]
         for c in sd:
@@ -496,3 +507,52 @@ async def generate_simple(payload: Dict) -> (Optional[Image.Image], bool):
         tmp = DrawBestSimple(sd_best, dx_best)
         tmp.load()
         return tmp.get(), 0
+
+
+async def generate_cal(payload: Dict) -> (str, bool):
+    async with aiohttp.request("POST", "https://www.diving-fish.com/api/maimaidxprober/query/player",
+                               json=payload) as resp:
+        if resp.status == 400:
+            return None, 400
+        if resp.status == 403:
+            return None, 403
+        sd_best = BestList(25)
+        dx_best = BestList(15)
+        obj = await resp.json()
+
+        dx: List[Dict] = obj["charts"]["dx"]
+        sd: List[Dict] = obj["charts"]["sd"]
+        for c in sd:
+            sd_best.push(ChartInfo.from_json(c))
+        for c in dx:
+            dx_best.push(ChartInfo.from_json(c))
+        print(sd_best)
+        X1 = list(np.arange(1, 26))
+        Y1 = []
+        sd_best.data.reverse()
+        dx_best.data.reverse()
+        for i in sd_best.data:
+            i: ChartInfo
+            Y1.append(i.ra)
+
+        X2 = list(np.arange(1, 16))
+        Y2 = []
+        for i in dx_best.data:
+            i: ChartInfo
+            Y2.append(i.ra)
+
+        ax1 = plt.subplot(211)
+        ax1.plot(X1, Y1, "ob:")
+        ax1.plot()
+
+        ax2 = plt.subplot(212)
+        ax2.plot(X2, Y2, "or:")
+        ax2.plot()
+
+        my_stringIObytes = io.BytesIO()
+        plt.savefig(my_stringIObytes, format='png')
+        my_stringIObytes.seek(0)
+        my_base64_jpgData = base64.b64encode(my_stringIObytes.read())
+        pngStr = str(my_base64_jpgData, "utf-8")
+        print(pngStr)
+        return pngStr, 0

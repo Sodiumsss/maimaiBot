@@ -6,7 +6,7 @@ from nonebot.adapters.onebot.v11 import Message, MessageSegment
 from nonebot.params import CommandArg, EventMessage
 
 from src.libraries.image import *
-from src.libraries.maimai_best_40 import generate, generate_simple
+from src.libraries.maimai_best_40 import generate, generate_simple, generate_cal
 from src.libraries.maimaidx_music import *
 
 
@@ -239,6 +239,26 @@ async def _(event: Event, message: Message = CommandArg()):
         await best_40_simple.send(Message([
             MessageSegment("image", {
                 "file": f"base64://{str(image_to_base64(img), encoding='utf-8')}"
+            })
+        ]))
+
+cal = on_command('cal')
+@cal.handle()
+async def _(event: Event, message: Message = CommandArg()):
+    username = str(message).strip()
+    if username == "":
+        payload = {'qq': str(event.get_user_id())}
+    else:
+        payload = {'username': username}
+    pngStr,success = await generate_cal(payload)
+    if success == 400:
+        await cal.send("未找到此玩家，请确保此玩家的用户名和查分器中的用户名相同。")
+    elif success == 403:
+        await cal.send("该用户禁止了其他人获取数据。")
+    else:
+        await cal.send(Message([
+            MessageSegment("image", {
+                "file": f"base64://{pngStr}"
             })
         ]))
 
